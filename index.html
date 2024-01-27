@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Event-Plattform</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #444;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        h1, h2 {
+            color: #f90;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #f90;
+            color: #333;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Event-Plattform</h1>
+
+        <div id="loginSection">
+            <label for="userType">Ich bin:</label>
+            <select id="userType" onchange="toggleLogin()">
+                <option value="veranstalter">Veranstalter</option>
+                <option value="haendler">Händler</option>
+            </select>
+
+            <label for="loginUsername">Benutzername:</label>
+            <input type="text" id="loginUsername" required>
+
+            <label for="loginPassword">Passwort:</label>
+            <input type="password" id="loginPassword" required>
+
+            <button type="button" onclick="login()">Anmelden</button>
+        </div>
+
+        <div id="eventSection" style="display: none;">
+            <h2>Verfügbare Events</h2>
+            <select id="availableEvents" onchange="toggleBidSection()">
+                <!-- Here events will be dynamically loaded -->
+            </select>
+
+            <div id="bidSection" style="display: none;">
+                <label for="bidAmount">Gebot (in Euro):</label>
+                <input type="number" id="bidAmount" step="0.01">
+                <button type="button" onclick="placeBid()">Bieten</button>
+            </div>
+        </div>
+
+        <div id="createEventSection" style="display: none;">
+            <h2>Event erstellen</h2>
+            <label for="eventName">Eventname:</label>
+            <input type="text" id="eventName" required>
+
+            <button type="button" onclick="createEvent()">Event erstellen</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+      
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        const eventsRef = firebase.database().ref('events');
+
+        function toggleLogin() {
+            var userType = document.getElementById('userType').value;
+            var loginSection = document.getElementById('loginSection');
+            var eventSection = document.getElementById('eventSection');
+            var createEventSection = document.getElementById('createEventSection');
+
+            if (userType === 'veranstalter') {
+                loginSection.style.display = 'none';
+                eventSection.style.display = 'none';
+                createEventSection.style.display = 'block';
+            } else {
+                loginSection.style.display = 'block';
+                eventSection.style.display = 'none';
+                createEventSection.style.display = 'none';
+            }
+        }
+
+        function toggleBidSection() {
+            var userType = document.getElementById('userType').value;
+            var availableEvents = document.getElementById('availableEvents');
+            var bidSection = document.getElementById('bidSection');
+
+            if (userType === 'haendler' && availableEvents.value !== '') {
+                bidSection.style.display = 'block';
+            } else {
+                bidSection.style.display = 'none';
+            }
+        }
+
+        function login() {
+            var userType = document.getElementById('userType').value;
+            var loginUsername = document.getElementById('loginUsername').value;
+            var loginPassword = document.getElementById('loginPassword').value;
+
+            // Here login logic goes, for now just simulate login and load events
+            if (userType === 'veranstalter') {
+                toggleLogin();
+            } else {
+                toggleLogin();
+                document.getElementById('eventSection').style.display = 'block';
+                loadEvents();
+            }
+        }
+
+        function loadEvents() {
+            eventsRef.once('value', (snapshot) => {
+                const events = snapshot.val();
+                const availableEvents = document.getElementById('availableEvents');
+                availableEvents.innerHTML = '';
+
+                for (let eventId in events) {
+                    const option = document.createElement('option');
+                    option.value = eventId;
+                    option.innerText = events[eventId].name;
+                    availableEvents.appendChild(option);
+                }
+            });
+        }
+
+        function placeBid() {
+            var bidAmount = document.getElementById('bidAmount').value;
+            var selectedEvent = document.getElementById('availableEvents').value;
+
+            console.log('Bid placed for event', selectedEvent, 'of', bidAmount, 'Euro.');
+        }
+
+        function createEvent() {
+            var eventName = document.getElementById('eventName').value;
+
+            // Push new event to Firebase
+            const newEventRef = eventsRef.push();
+            newEventRef.set({
+                name: eventName
+            });
+
+            console.log('Event created with name:', eventName);
+        }
+    </script>
+</body>
+</html>
